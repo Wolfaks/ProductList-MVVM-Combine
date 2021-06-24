@@ -3,10 +3,7 @@ platform :ios, '14.5'
 
 use_frameworks!
 
-target 'ProductList-MVVM-RXSwift' do
-
-  pod 'RxSwift', '~> 6'
-  pod 'RxCocoa', '~> 6'
+target 'ProductList-MVVM-Combine' do
 
 end
 

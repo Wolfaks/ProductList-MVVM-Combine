@@ -9,7 +9,7 @@ class ListViewModel: ListViewModelProtocol {
 
     // Поиск
     var searchString = ""
-    var searchTimer = Timer()
+    private let searchOperationQueue = OperationQueue()
 
     // Страницы
     var page: Int = 1
@@ -29,18 +29,6 @@ class ListViewModel: ListViewModelProtocol {
         setupBindings()
 
         // Load
-        loadProducts()
-
-    }
-
-    @objc func delayedSearch() {
-
-        // Выполняем поиск
-
-        // Задаем первую страницу
-        page = 1
-
-        // Запрос данных
         loadProducts()
 
     }
@@ -70,11 +58,28 @@ class ListViewModel: ListViewModelProtocol {
         // Отображаем анимацию загрузки
         showLoadIndicator()
 
-        // Отменяем предыдущий таймер поиска
-        searchTimer.invalidate()
+        // Поиск с задержкой (по ТЗ)
+        let operationSearch = BlockOperation()
+        operationSearch.addExecutionBlock { [weak operationSearch] in
 
-        // Таймер задержки поиска (по ТЗ)
-        searchTimer = Timer.scheduledTimer(timeInterval: 1.0, target: self, selector: #selector(delayedSearch), userInfo: nil, repeats: false)
+            // Задержка (по ТЗ)
+            sleep(2)
+
+            if !(operationSearch?.isCancelled ?? false) {
+
+                // Выполняем поиск
+
+                // Задаем первую страницу
+                self.page = 1
+
+                // Запрос данных
+                self.loadProducts()
+
+            }
+
+        }
+        searchOperationQueue.cancelAllOperations()
+        searchOperationQueue.addOperation(operationSearch)
 
     }
 

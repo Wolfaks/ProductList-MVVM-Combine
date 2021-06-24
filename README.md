@@ -1,4 +1,4 @@
-# ProductList-MVVM-RXSwift
+# ProductList-MVVM-Combine
 
 List:
 

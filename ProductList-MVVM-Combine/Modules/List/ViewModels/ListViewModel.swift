@@ -44,26 +44,15 @@ class ListViewModel: ListViewModelProtocol {
         // Проверяем измененный в форме текст
         guard let searchString = text else { return }
 
-        // Выполняем поиск когда форма была изменена
-        if searchString.hash == self.searchString.hash {
-            return
-        }
-
-        // Получаем искомую строку
-        self.searchString = searchString
-
         // Очищаем старые данные и обновляем таблицу
         removeAllProducts()
 
         // Отображаем анимацию загрузки
         showLoadIndicator()
 
-        // Поиск с задержкой (по ТЗ)
+        // Поиск
         let operationSearch = BlockOperation()
         operationSearch.addExecutionBlock { [weak operationSearch] in
-
-            // Задержка (по ТЗ)
-            sleep(2)
 
             if !(operationSearch?.isCancelled ?? false) {
 

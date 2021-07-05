@@ -100,16 +100,17 @@ class ListViewController: UIViewController {
     
     @IBAction func removeSearch(_ sender: Any) {
 
-        // Скрываем клавиатуру
-        hideKeyboard()
-        
         // Очищаем форму поиска
         searchForm.text = ""
+        viewModel.input.searchText = ""
+
+        // Скрываем клавиатуру
+        hideKeyboard()
         
     }
     
     func hideKeyboard() {
-        view.endEditing(true);
+        view.endEditing(true)
     }
     
 }

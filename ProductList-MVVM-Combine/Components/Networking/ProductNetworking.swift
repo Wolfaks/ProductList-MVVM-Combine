@@ -1,5 +1,6 @@
 
 import Foundation
+import Combine
 
 class ProductNetworking {
 
@@ -8,8 +9,8 @@ class ProductNetworking {
     
     private init() {}
     
-    static func getProducts(page: Int, searchText: String, complition: @escaping(ProductResponse) -> ()) {
-        
+    static func getProducts(page: Int, searchText: String) -> AnyPublisher<Any, Never> {
+
         // Подготовка параметров для запроса, задаем макс количество элементов = 21
         var params = ["maxItems": "\(maxProductsOnPage)"]
 
@@ -24,37 +25,38 @@ class ProductNetworking {
         if !searchText.isEmpty {
             params["filter[title]"] = searchText
         }
-        
-        // Получаем список
-        Networking.network.getData(link: Networking.LinkList.list.rawValue, params: params) { (json) in
-            
-            do {
-                let response = try ProductResponse(products: json)
-                complition(response)
-            } catch {
-                print(error)
-            }
-            
+
+        // Подготовка URL
+        let urlWithParams = NSURLComponents(string: Networking.LinkList.list.rawValue)!
+
+        // Параметры запроса
+        var parameters = [URLQueryItem]()
+        for (key, value) in params {
+            parameters.append(URLQueryItem(name: key, value: value))
         }
+
+        if !parameters.isEmpty {
+            urlWithParams.queryItems = parameters
+        }
+        // END Параметры запроса
+        let url = urlWithParams.url
+
+        // Отправляем запрос
+        return Networking.network.getData(url: url!)
         
     }
     
-    static func getOneProduct(id: Int, complition: @escaping(ProductResponse) -> ()) {
-        
+    static func getOneProduct(id: Int) -> AnyPublisher<Any, Never> {
+
         // Подготовка параметров для запроса, задаем выбранный id
         let link = Networking.LinkList.product.rawValue + "\(id)"
-        
-        // Получаем список
-        Networking.network.getData(link: link, params: [:]) { (json) in
-            
-            do {
-                let response = try ProductResponse(product: json)
-                complition(response)
-            } catch {
-                print(error)
-            }
-            
-        }
+
+        // Подготовка URL
+        let urlWithParams = NSURLComponents(string: link)!
+        let url = urlWithParams.url
+
+        // Отправляем запрос
+        return Networking.network.getData(url: url!)
         
     }
     

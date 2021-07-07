@@ -1,9 +1,6 @@
 
 import UIKit
-
-protocol CartCountDelegate: class {
-    func changeCount(value: Int)
-}
+import Combine
 
 @IBDesignable class CartCount: UIView {
 
@@ -15,8 +12,7 @@ protocol CartCountDelegate: class {
     @IBOutlet weak var plusBtn: UIButton!
     @IBOutlet weak var selectedAmount: UILabel!
     
-    weak var delegate: CartCountDelegate?
-    
+    @Published var countSubject: Int?
     var count: Int = 0 {
         didSet {
             selectedAmount.text = "\(count)"
@@ -25,6 +21,8 @@ protocol CartCountDelegate: class {
     
     var view: UIView!
     var nibName: String = "CartCount"
+    
+    var cancellable = Set<AnyCancellable>()
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -46,6 +44,7 @@ protocol CartCountDelegate: class {
     }
     
     func setupView() {
+        
         let view = loadFromNib()
         view.frame = bounds
         view.autoresizingMask = [
@@ -57,6 +56,20 @@ protocol CartCountDelegate: class {
         // Закругляем углы stackView
         radiusStackView.layer.cornerRadius = 5.0
         
+        // bind - Клик на кнопки количества товаров в корзине
+        setupBindings()
+        
+    }
+    
+    private func setupBindings() {
+        
+        // bind - Клик на кнопки количества товаров в корзине
+        $countSubject
+            .sink { [weak self] count in
+                guard let count = count else { return }
+                self?.count = count
+            }.store(in: &cancellable)
+        
     }
     
     @IBAction func changeCountBtn(_ sender: UIButton) {
@@ -64,13 +77,10 @@ protocol CartCountDelegate: class {
         // Меняем значение в корзине нажатием на кнопку - / +
         if sender == minusBtn {
             // Нельзя задавать значение меньше нуля
-            count = max(0, count - 1)
+            countSubject = max(0, count - 1)
         } else if sender == plusBtn {
-            count += 1
+            countSubject = count + 1
         }
-        
-        // Изменяем значение количества в структуре
-        delegate?.changeCount(value: count)
         
     }
     

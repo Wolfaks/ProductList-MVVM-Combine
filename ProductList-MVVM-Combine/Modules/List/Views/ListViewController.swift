@@ -11,6 +11,8 @@ class ListViewController: UIViewController {
     // viewModel
     var viewModel: ListViewModelProtocol!
     var cancellable = Set<AnyCancellable>()
+    
+    var productList: [Product] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -28,14 +30,6 @@ class ListViewController: UIViewController {
 
         // viewModel
         viewModel = ListViewModel()
-        viewModel.showLoadIndicator = { [weak self] in
-            // Отображаем анимацию загрузки
-            self?.loadIndicator.startAnimating()
-        }
-        viewModel.hideLoadIndicator = { [weak self] in
-            // Скрываем анимацию загрузки
-            self?.loadIndicator.stopAnimating()
-        }
 
         // searchForm
         searchForm.delegate = self
@@ -65,34 +59,58 @@ class ListViewController: UIViewController {
     }
 
     func bindViewModelToView() {
+
+        // Получение данных из viewModel
         viewModel.output.$productList
                 .receive(on: RunLoop.main)
-                .sink(receiveValue: { [weak self] item in
+                .sink(receiveValue: { [weak self] products in
+                    self?.productList = products
                     self?.tableView.reloadData()
                 }).store(in: &cancellable)
+
+        // Отображаем или скрываем анимацию загрузки
+        viewModel.output.$showLoadIndicator
+                .receive(on: RunLoop.main)
+                .sink(receiveValue: { [weak self] show in
+
+                    if show {
+                        // Отображаем анимацию загрузки
+                        self?.loadIndicator.startAnimating()
+                    } else {
+                        // Скрываем анимацию загрузки
+                        self?.loadIndicator.stopAnimating()
+                    }
+
+                }).store(in: &cancellable)
+
     }
 
     @objc func updateCartCount(notification: Notification) {
 
         // Изменяем кол-во товара в корзине
-        guard let userInfo = notification.userInfo, let index = userInfo["index"] as? Int, let newCount = userInfo["count"] as? Int, let viewModel = viewModel else { return }
+        guard let userInfo = notification.userInfo, let index = userInfo["index"] as? Int, let newCount = userInfo["count"] as? Int, let reload = userInfo["reload"] as? Bool, let viewModel = viewModel else { return }
 
         // Записываем новое значение
-        viewModel.updateCartCount(index: index, value: newCount)
+        productList[index].selectedAmount = newCount
+        
+        //  Обновление таблицы
+        if reload {
+            tableView.reloadData()
+        }
 
     }
 
     @objc func showDetail(notification: Notification) {
 
         // Переход в детальную информацию
-        guard let userInfo = notification.userInfo, let index = userInfo["index"] as? Int, let viewModel = viewModel, !viewModel.output.productList.isEmpty && viewModel.output.productList.indices.contains(index) else { return }
+        guard let userInfo = notification.userInfo, let index = userInfo["index"] as? Int, let viewModel = viewModel, !productList.isEmpty && productList.indices.contains(index) else { return }
 
         // Выполняем переход в детальную информацию
         if let detailViewController = DetailViewController.storyboardInstance() {
             detailViewController.productIndex = index
-            detailViewController.productID = viewModel.output.productList[index].id
-            detailViewController.productTitle = viewModel.output.productList[index].title
-            detailViewController.productSelectedAmount = viewModel.output.productList[index].selectedAmount
+            detailViewController.productID = productList[index].id
+            detailViewController.productTitle = productList[index].title
+            detailViewController.productSelectedAmount = productList[index].selectedAmount
             navigationController?.pushViewController(detailViewController, animated: true)
         }
 
@@ -102,7 +120,7 @@ class ListViewController: UIViewController {
 
         // Очищаем форму поиска
         searchForm.text = ""
-        viewModel.input.searchText = ""
+        NotificationCenter.default.post(name: UITextField.textDidChangeNotification, object: searchForm)
 
         // Скрываем клавиатуру
         hideKeyboard()
@@ -124,8 +142,7 @@ extension ListViewController: UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
 
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "productCell", for: indexPath) as? ProductListTableCell, let viewModel = viewModel else { return UITableViewCell() }
-
-        let cellViewModel = self.viewModel.cellViewModel(product: viewModel.output.productList[indexPath.row])
+        let cellViewModel = self.viewModel.cellViewModel(product: productList[indexPath.row])
         cell.productIndex = indexPath.row
         cell.viewModel = cellViewModel
 

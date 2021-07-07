@@ -1,14 +1,9 @@
 
 import UIKit
 
-protocol CartBtnDetailDelegate: class {
-    func addCart()
-}
-
-@IBDesignable class CartBtnDetail: UIView, CartBtnProtocol {
+@IBDesignable class CartBtnDetail: UIView {
     
     @IBOutlet weak var radiusView: UIView!
-    weak var delegate: CartBtnDetailDelegate?
     
     var view: UIView!
     var nibName: String = "CartBtnDetail"
@@ -45,16 +40,6 @@ protocol CartBtnDetailDelegate: class {
         // Закругляем углы кнопки
         radiusView.layer.cornerRadius = 5.0
         
-        // Клик на добавление в карзину
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(addCartTapped))
-        view.isUserInteractionEnabled = true
-        view.addGestureRecognizer(tapGesture)
-        
-    }
-    
-    @objc func addCartTapped() {
-        // Добавляем товар в карзину
-        delegate?.addCart()
     }
     
 }

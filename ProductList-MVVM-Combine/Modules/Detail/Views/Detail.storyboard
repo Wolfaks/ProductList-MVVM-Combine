@@ -11,7 +11,7 @@
         <!--Detail View Controller-->
         <scene sceneID="N3e-VP-qku">
             <objects>
-                <viewController storyboardIdentifier="Detail" id="4y0-Od-vcy" customClass="DetailViewController" customModule="ProductList_MVVM" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="Detail" id="4y0-Od-vcy" customClass="DetailViewController" customModule="ProductList_MVVM_Combine" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="CUT-lD-N4n">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -59,7 +59,7 @@
                                                         <rect key="frame" x="0.0" y="46" width="249" height="152"/>
                                                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                                         <prototypes>
-                                                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="categoryCell" id="Xpr-b6-0eM" customClass="CategoryListTableCell" customModule="ProductList_MVVM" customModuleProvider="target">
+                                                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="categoryCell" id="Xpr-b6-0eM" customClass="CategoryListTableCell" customModule="ProductList_MVVM_Combine" customModuleProvider="target">
                                                                 <rect key="frame" x="0.0" y="24.5" width="249" height="44"/>
                                                                 <autoresizingMask key="autoresizingMask"/>
                                                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="Xpr-b6-0eM" id="Jm0-20-dXw">
@@ -98,7 +98,7 @@
                                                 <color key="textColor" systemColor="linkColor"/>
                                                 <nil key="highlightedColor"/>
                                             </label>
-                                            <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="u8x-2W-2WM" customClass="CartBtnDetail" customModule="ProductList_MVVM" customModuleProvider="target">
+                                            <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="u8x-2W-2WM" customClass="CartBtnDetail" customModule="ProductList_MVVM_Combine" customModuleProvider="target">
                                                 <rect key="frame" x="0.0" y="0.0" width="92" height="28"/>
                                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                                 <constraints>
@@ -106,7 +106,7 @@
                                                     <constraint firstAttribute="height" constant="28" id="bk3-0u-ZIg"/>
                                                 </constraints>
                                             </view>
-                                            <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="idB-ub-I1W" customClass="CartCount" customModule="ProductList_MVVM" customModuleProvider="target">
+                                            <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="idB-ub-I1W" customClass="CartCount" customModule="ProductList_MVVM_Combine" customModuleProvider="target">
                                                 <rect key="frame" x="0.0" y="0.0" width="92" height="28"/>
                                                 <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                                                 <constraints>

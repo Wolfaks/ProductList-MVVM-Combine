@@ -45,36 +45,15 @@ class DetailViewController: UIViewController {
         }
         
         // Запрос данных
-        // viewModel
         if let id = productID {
+
+            // viewModel
             viewModel = DetailViewModel(productID: id, amount: productSelectedAmount)
-            viewModel.bindToController = { [weak self] in
-
-                // Скрываем анимацию загрузки
-                self?.loadIndicator.stopAnimating()
-
-                // Задаем обновленный заголовок страницы
-                self?.title = self?.viewModel.title
-
-                // Выводим информацию
-                self?.titleLabel.text = self?.viewModel.title
-                self?.producerLabel.text = self?.viewModel.producer
-                self?.priceLabel.text = self?.viewModel.price
-                self?.image.image = self?.viewModel.image
-
-                // Описание
-                self?.changeDescription(text: self?.viewModel.shortDescription ?? "")
-
-                // Вывод корзины и кол-ва добавленых в корзину
-                self?.setCartButtons()
-
-                // Отображаем данные
-                self?.infoStackView.isHidden = false
-
-            }
 
             // tableView
-            settingTableView()
+            tableView.rowHeight = 32.0
+            tableView.delegate = self
+            tableView.dataSource = self
 
         }
         
@@ -85,20 +64,75 @@ class DetailViewController: UIViewController {
     }
 
     func bindViewModelToView() {
-        viewModel.output.$categoryList
+
+        // Получение данных из viewModel
+        viewModel.output.$dataReceived
                 .receive(on: RunLoop.main)
-                .sink(receiveValue: { [weak self] item in
-                    self?.tableView.reloadData()
+                .sink(receiveValue: { [weak self] received in
+
+                    if received {
+
+                        // Скрываем анимацию загрузки
+                        self?.loadIndicator.stopAnimating()
+
+                        // Задаем обновленный заголовок страницы
+                        self?.title = self?.viewModel.title
+
+                        // Выводим информацию
+                        self?.titleLabel.text = self?.viewModel.title
+                        self?.producerLabel.text = self?.viewModel.producer
+                        self?.priceLabel.text = self?.viewModel.price
+                        self?.image.image = self?.viewModel.image
+
+                        // Описание
+                        self?.changeDescription(text: self?.viewModel.shortDescription ?? "")
+
+                        // Вывод корзины и кол-ва добавленых в корзину
+                        self?.setCartButtons()
+
+                        // Отображаем данные
+                        self?.infoStackView.isHidden = false
+
+                        // Обновляем данные таблицы категорий
+                        self?.tableView.reloadData()
+
+                    }
+
                 }).store(in: &cancellable)
+        
+        // Клик на добавление в карзину
+        let tapCartBtnGesture = UITapGestureRecognizer(target: self, action: #selector(tapCartAction))
+        cartBtnDetailView.isUserInteractionEnabled = true
+        cartBtnDetailView.addGestureRecognizer(tapCartBtnGesture)
+        
+        // Изменение количества в корзине
+        cartCountView.$countSubject
+            .sink { [weak self] count in
+              
+                guard let count = count else { return }
+                
+                // Изменяем значение количества в структуре
+                guard let productIndex = self?.productIndex, self?.viewModel != nil else { return }
+                
+                // Обновляем кнопку в отображении
+                self?.viewModel.changeCartCount(index: productIndex, count: count)
+                self?.setCartButtons()
+                
+            }.store(in: &cancellable)
+
     }
+    
+    @objc func tapCartAction() {
+        
+        // Добавляем товар в карзину
+        guard let productIndex = productIndex, viewModel != nil else { return }
 
-    private func settingTableView() {
-
-        // tableView
-        tableView.rowHeight = 32.0
-        tableView.delegate = self
-        tableView.dataSource = self
-
+        let addCartCount = 1
+        
+        // Обновляем кнопку в отображении
+        viewModel.changeCartCount(index: productIndex, count: addCartCount)
+        setCartButtons()
+        
     }
     
     func setCartButtons() {
@@ -115,13 +149,9 @@ class DetailViewController: UIViewController {
             // Задаем текущее значение счетчика
             cartCountView.count = viewModel.selectedAmount
             
-            // Подписываемся на делегат
-            cartCountView.delegate = self
-            
         } else {
             // Выводим кнопку добавления в карзину
             cartBtnDetailView.isHidden = false
-            cartBtnDetailView.delegate = self
             cartCountView.isHidden = true
         }
         
@@ -167,36 +197,4 @@ extension DetailViewController: UITableViewDelegate {
         32.0
     }
 
-}
-
-extension DetailViewController: CartCountDelegate {
-    
-    func changeCount(value: Int) {
-        
-        // Изменяем значение количества в структуре
-        guard let productIndex = productIndex, viewModel != nil else { return }
-        
-        // Обновляем кнопку в отображении
-        viewModel.changeCartCount(index: productIndex, count: value)
-        setCartButtons()
-        
-    }
-    
-}
-
-extension DetailViewController: CartBtnDetailDelegate {
-    
-    func addCart() {
-        
-        // Добавляем товар в карзину
-        guard let productIndex = productIndex, viewModel != nil else { return }
-
-        let addCartCount = 1
-        
-        // Обновляем кнопку в отображении
-        viewModel.changeCartCount(index: productIndex, count: addCartCount)
-        setCartButtons()
-        
-    }
-    
 }

@@ -1,5 +1,6 @@
 
 import UIKit
+import Combine
 
 protocol DetailViewModelProtocol {
     var title: String { get }
@@ -7,7 +8,6 @@ protocol DetailViewModelProtocol {
     var price: String { get }
     var shortDescription: String { get }
     var image: UIImage { get }
-    var bindToController: () -> () { get set }
     func numberOfRows() -> Int
     func changeCartCount(index: Int, count: Int)
     var selectedAmount: Int { get set }

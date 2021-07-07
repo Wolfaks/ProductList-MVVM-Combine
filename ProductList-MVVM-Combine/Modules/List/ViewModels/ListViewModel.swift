@@ -4,9 +4,6 @@ import Combine
 
 class ListViewModel: ListViewModelProtocol {
 
-    var showLoadIndicator: () -> () = {}
-    var hideLoadIndicator: () -> () = {}
-
     // Поиск
     var searchString = ""
     private let searchOperationQueue = OperationQueue()
@@ -28,9 +25,6 @@ class ListViewModel: ListViewModelProtocol {
         // setupBindings
         setupBindings()
 
-        // Load
-        loadProducts()
-
     }
 
     private func setupBindings() {
@@ -48,7 +42,7 @@ class ListViewModel: ListViewModelProtocol {
         removeAllProducts()
 
         // Отображаем анимацию загрузки
-        showLoadIndicator()
+        output.showLoadIndicator = true
 
         // Поиск
         let operationSearch = BlockOperation()
@@ -75,32 +69,45 @@ class ListViewModel: ListViewModelProtocol {
     func loadProducts() {
 
         // Отправляем запрос загрузки товаров
-        ProductNetworking.getProducts(page: page, searchText: input.searchText) { [weak self] (response) in
+        ProductNetworking.getProducts(page: page, searchText: input.searchText)
+                .sink { [weak self] data in
+                    
+                    guard let data = data as? Data else { return }
+                    
+                    do {
 
-            // Обрабатываем полученные товары
-            var products = response.products
+                        // Проверяем что данные были успешно обработаны
+                        let json = try JSONSerialization.jsonObject(with: data, options: [])
+                        let response = try ProductResponse(products: json)
 
-            // Так как API не позвращает отдельный ключ, который говорит о том, что есть следующая страница, определяем это вручную
-            if !products.isEmpty && products.count == ProductNetworking.maxProductsOnPage {
+                        // Обрабатываем полученные товары
+                        var products = response.products
 
-                // Задаем наличие следующей страницы
-                self?.haveNextPage = true
+                        // Так как API не позвращает отдельный ключ, который говорит о том, что есть следующая страница, определяем это вручную
+                        if !products.isEmpty && products.count == ProductNetworking.maxProductsOnPage {
 
-                // Удаляем последний элемент, который используется только для проверки на наличие следующей страницы
-                products.remove(at: products.count - 1)
+                            // Задаем наличие следующей страницы
+                            self?.haveNextPage = true
 
-            }
+                            // Удаляем последний элемент, который используется только для проверки на наличие следующей страницы
+                            products.remove(at: products.count - 1)
 
-            // Устанавливаем загруженные товары и обновляем таблицу
-            // append contentsOf так как у нас метод грузит как первую страницу, так и последующие
-            self?.appendProducts(products: products)
+                        }
 
-            // Обновляем данные в контроллере
-            if self?.page == 1 {
-                self?.hideLoadIndicator()
-            }
+                        // Устанавливаем загруженные товары и обновляем таблицу
+                        // append contentsOf так как у нас метод грузит как первую страницу, так и последующие
+                        self?.appendProducts(products: products)
 
-        }
+                        // Обновляем данные в контроллере
+                        if self?.page == 1 {
+                            self?.output.showLoadIndicator = false
+                        }
+
+                    } catch {
+                        print(error)
+                    }
+
+                }.store(in: &cancellable)
 
     }
 
@@ -132,11 +139,6 @@ class ListViewModel: ListViewModelProtocol {
         output.productList.append(contentsOf: products)
     }
 
-    func updateCartCount(index: Int, value: Int) {
-        guard !output.productList.isEmpty && output.productList.indices.contains(index) else { return }
-        output.productList[index].selectedAmount = value
-    }
-
     func cellViewModel(product: Product) -> ListCellViewModalProtocol? {
         ListCellViewModel(product: product)
     }
@@ -149,4 +151,5 @@ class InputListView {
 
 class OutputListView {
     @Published var productList: [Product] = []
+    @Published var showLoadIndicator: Bool = true
 }

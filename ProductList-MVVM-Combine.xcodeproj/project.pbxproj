@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 50;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -32,7 +32,6 @@
 		AC101F552652DBA100229855 /* ListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC101F542652DBA100229855 /* ListViewController.swift */; };
 		AC101F5A2652EE4200229855 /* Product.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC101F592652EE4200229855 /* Product.swift */; };
 		AC3F669F2657E3F2003658EC /* CategoryListTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC3F669E2657E3F2003658EC /* CategoryListTableCell.swift */; };
-		AC3F66A12657E4DB003658EC /* CartBtnProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC3F66A02657E4DB003658EC /* CartBtnProtocol.swift */; };
 		AC3F66A42657E797003658EC /* DetailViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC3F66A32657E797003658EC /* DetailViewModel.swift */; };
 		AC5865E92656A52600A14876 /* ImageNetworking.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC5865E82656A52600A14876 /* ImageNetworking.swift */; };
 		AC85D4AC2653FDFD0017B5AC /* ProductNetworking.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC85D4AB2653FDFD0017B5AC /* ProductNetworking.swift */; };
@@ -72,7 +71,6 @@
 		AC101F542652DBA100229855 /* ListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListViewController.swift; sourceTree = "<group>"; };
 		AC101F592652EE4200229855 /* Product.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Product.swift; sourceTree = "<group>"; };
 		AC3F669E2657E3F2003658EC /* CategoryListTableCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CategoryListTableCell.swift; sourceTree = "<group>"; };
-		AC3F66A02657E4DB003658EC /* CartBtnProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CartBtnProtocol.swift; sourceTree = "<group>"; };
 		AC3F66A32657E797003658EC /* DetailViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DetailViewModel.swift; sourceTree = "<group>"; };
 		AC5865E82656A52600A14876 /* ImageNetworking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageNetworking.swift; sourceTree = "<group>"; };
 		AC85D4AB2653FDFD0017B5AC /* ProductNetworking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductNetworking.swift; sourceTree = "<group>"; };
@@ -217,7 +215,6 @@
 		AC3F66A22657E4E5003658EC /* Protocols */ = {
 			isa = PBXGroup;
 			children = (
-				AC3F66A02657E4DB003658EC /* CartBtnProtocol.swift */,
 				58C7AD57EFC2A24C96864008 /* ListViewModelProtocol.swift */,
 				58C7A649381F95437AB11DF9 /* ListCellViewModalProtocol.swift */,
 				58C7A5CF4D7FA4A2B297DDBF /* DetailViewModelProtocol.swift */,
@@ -410,7 +407,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AC3F66A12657E4DB003658EC /* CartBtnProtocol.swift in Sources */,
 				AC101F422652DA0700229855 /* ItemListTest.xcdatamodeld in Sources */,
 				AC101F382652DA0700229855 /* AppDelegate.swift in Sources */,
 				AC101F552652DBA100229855 /* ListViewController.swift in Sources */,

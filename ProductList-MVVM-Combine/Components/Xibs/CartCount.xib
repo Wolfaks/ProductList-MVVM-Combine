@@ -8,7 +8,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <objects>
-        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="CartCount" customModule="ProductListTest" customModuleProvider="target">
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="CartCount" customModule="ProductList_MVVM_Combine" customModuleProvider="target">
             <connections>
                 <outlet property="minusBtn" destination="4Jw-aR-3IP" id="jed-si-Ewg"/>
                 <outlet property="plusBtn" destination="VHP-FX-UHg" id="fmK-yi-S5V"/>
@@ -33,7 +33,7 @@
                                 <color key="titleColor" red="0.96470588239999999" green="0.96862745100000003" blue="0.97647058819999999" alpha="1" colorSpace="calibratedRGB"/>
                             </state>
                             <connections>
-                                <action selector="changeCountBtn:" destination="-1" eventType="touchUpInside" id="J8n-tV-IID"/>
+                                <action selector="changeCountBtn:" destination="-1" eventType="touchUpInside" id="iic-9A-jeV"/>
                             </connections>
                         </button>
                         <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="0" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="hKj-EO-OGT">
@@ -52,7 +52,7 @@
                                 <color key="titleColor" red="0.96470588239999999" green="0.96862745100000003" blue="0.97647058819999999" alpha="1" colorSpace="calibratedRGB"/>
                             </state>
                             <connections>
-                                <action selector="changeCountBtn:" destination="-1" eventType="touchUpInside" id="iZS-6f-3kB"/>
+                                <action selector="changeCountBtn:" destination="-1" eventType="touchUpInside" id="NQ1-Vd-gfa"/>
                             </connections>
                         </button>
                     </subviews>

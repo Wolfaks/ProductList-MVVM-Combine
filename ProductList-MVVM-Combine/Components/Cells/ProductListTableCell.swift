@@ -1,5 +1,6 @@
 
 import UIKit
+import Combine
 
 class ProductListTableCell: UITableViewCell {
     
@@ -11,6 +12,8 @@ class ProductListTableCell: UITableViewCell {
     @IBOutlet weak var productProducer: UILabel!
     @IBOutlet weak var productPrice: UILabel!
     @IBOutlet weak var stackFooterCell: UIStackView!
+    
+    var cancellable = Set<AnyCancellable>()
 
     let cartBtnListView: CartBtnList = {
         let btnList = CartBtnList()
@@ -55,7 +58,11 @@ class ProductListTableCell: UITableViewCell {
             }
 
             // Вывод корзины и кол-ва добавленых в корзину
-            setCartButtons(viewModel: viewModel)
+            cartCountView.countSubject = viewModel.selectedAmount
+            setCartButtons(count: viewModel.selectedAmount)
+
+            // bind - Клик на добавление в карзину
+            setupBindings()
 
             // Действия при клике
             setClicable()
@@ -67,6 +74,45 @@ class ProductListTableCell: UITableViewCell {
         super.awakeFromNib()
     }
     
+    private func setupBindings() {
+        
+        // bind - Клик на добавление в карзину
+        let tapCartBtnGesture = UITapGestureRecognizer(target: self, action: #selector(tapCartAction))
+        cartBtnListView.isUserInteractionEnabled = true
+        cartBtnListView.addGestureRecognizer(tapCartBtnGesture)
+        
+        // Изменение количества в корзине
+        cartCountView.$countSubject
+            .sink { [weak self] count in
+
+                guard let count = count else { return }
+                
+                // Изменяем значение количества в структуре
+                guard let productIndex = self?.productIndex else { return }
+                
+                // Вывод корзины и кол-ва добавленых в корзину
+                self?.setCartButtons(count: count)
+                
+                // Обновляем значение в корзине в списке через наблюдатель
+                NotificationCenter.default.post(name: Notification.Name(rawValue: "notificationUpdateCartCount"), object: nil, userInfo: ["index": productIndex, "count": count, "reload": false])
+                
+            }.store(in: &cancellable)
+        
+    }
+    
+    @objc func tapCartAction() {
+        
+        // Добавляем товар в карзину
+        guard let productIndex = productIndex else { return }
+        
+        // Вывод корзины и кол-ва добавленых в корзину
+        setCartButtons(count: 1)
+        
+        // Обновляем значение в корзине в списке через наблюдатель
+        NotificationCenter.default.post(name: Notification.Name(rawValue: "notificationUpdateCartCount"), object: nil, userInfo: ["index": productIndex, "count": 1, "reload": false])
+        
+    }
+    
     func setBorder() {
         
         // Устанавливаем обводку
@@ -76,10 +122,10 @@ class ProductListTableCell: UITableViewCell {
         
     }
     
-    func setCartButtons(viewModel: ListCellViewModalProtocol) {
+    func setCartButtons(count: Int) {
 
         // Вывод корзины и кол-ва добавленых в корзину
-        if viewModel.selectedAmount > 0 {
+        if count > 0 {
 
             // Удаляем cartBtnListView
             stackFooterCell.removeArrangedSubview(cartBtnListView)
@@ -89,10 +135,7 @@ class ProductListTableCell: UITableViewCell {
             stackFooterCell.addArrangedSubview(cartCountView)
 
             // Задаем текущее значение счетчика
-            cartCountView.count = viewModel.selectedAmount
-
-            // Подписываемся на делегат
-            cartCountView.delegate = self
+            cartCountView.count = count
 
             // Constraints
             cartCountView.widthAnchor.constraint(equalToConstant: CartCount.widthSize).isActive = true
@@ -106,9 +149,6 @@ class ProductListTableCell: UITableViewCell {
 
             // Выводим кнопку добавления в корзину
             stackFooterCell.addArrangedSubview(cartBtnListView)
-
-            // Подписываемся на делегат
-            cartBtnListView.delegate = self
 
             // Constraints
             cartBtnListView.widthAnchor.constraint(equalToConstant: CartBtnList.widthSize).isActive = true
@@ -140,33 +180,6 @@ class ProductListTableCell: UITableViewCell {
         productTitle.isUserInteractionEnabled = true
         productTitle.addGestureRecognizer(tapTitleGesture)
         
-    }
-    
-}
-
-extension ProductListTableCell: CartCountDelegate {
-    
-    func changeCount(value: Int) {
-        // Изменяем значение количества в структуре
-        guard let productIndex = productIndex else { return }
-
-        // Обновляем значение в корзине в списке через наблюдатель
-        NotificationCenter.default.post(name: Notification.Name(rawValue: "notificationUpdateCartCount"), object: nil, userInfo: ["index": productIndex, "count": value])
-
-    }
-    
-}
-
-extension ProductListTableCell: CartBtnListDelegate {
-    
-    func addCart() {
-
-        // Добавляем товар в карзину
-        guard let productIndex = productIndex else { return }
-
-        // Обновляем значение в корзине в списке через наблюдатель
-        NotificationCenter.default.post(name: Notification.Name(rawValue: "notificationUpdateCartCount"), object: nil, userInfo: ["index": productIndex, "count": 1])
-
     }
     
 }

@@ -1,18 +1,13 @@
 
 import UIKit
 
-protocol CartBtnListDelegate: class {
-    func addCart()
-}
-
-@IBDesignable class CartBtnList: UIView, CartBtnProtocol {
+@IBDesignable class CartBtnList: UIView {
 
     static let widthSize: CGFloat = 28.0
     static let heightSize: CGFloat = 28.0
 
     @IBOutlet weak var radiusView: UIView!
-    @IBOutlet weak var cartButton: UIButton!
-    weak var delegate: CartBtnListDelegate?
+    @IBOutlet weak var cartIco: UIImageView!
     
     var view: UIView!
     var nibName: String = "CartBtnList"
@@ -49,14 +44,6 @@ protocol CartBtnListDelegate: class {
         // Закругляем углы кнопки
         radiusView.layer.cornerRadius = 5.0
         
-        // Клик на добавление в карзину
-        cartButton.addTarget(self, action: #selector(addCartTapped), for: .touchUpInside)
-        
-    }
-    
-    @objc func addCartTapped() {
-        // Добавляем товар в карзину
-        delegate?.addCart()
     }
     
 }

@@ -6,7 +6,7 @@ class ImageNetworking {
     // Создаем синглтон для обращения к методам класса
     private init() {
     }
-    static let networking = ImageNetworking()
+    static let shared = ImageNetworking()
     
     // Кеш изображений
     var cacheImage = NSCache<NSString, UIImage>()

@@ -49,7 +49,7 @@ class ProductListTableCell: UITableViewCell {
 
                 // Загрузка изображения
                 guard let imageURL = URL(string: viewModel.imageUrl) else { return }
-                ImageNetworking.networking.getImage(link: imageURL) { (img) in
+                ImageNetworking.shared.getImage(link: imageURL) { (img) in
                     DispatchQueue.main.async {
                         self.productImage.image = img
                     }

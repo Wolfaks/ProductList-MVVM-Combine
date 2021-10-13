@@ -42,7 +42,7 @@ class ProductNetworking {
         let url = urlWithParams.url
 
         // Отправляем запрос
-        return Networking.network.getData(url: url!)
+        return Networking.shared.getData(url: url!)
         
     }
     
@@ -56,7 +56,7 @@ class ProductNetworking {
         let url = urlWithParams.url
 
         // Отправляем запрос
-        return Networking.network.getData(url: url!)
+        return Networking.shared.getData(url: url!)
         
     }
     

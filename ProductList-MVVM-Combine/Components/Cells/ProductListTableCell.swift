@@ -15,13 +15,13 @@ class ProductListTableCell: UITableViewCell {
     
     var cancellable = Set<AnyCancellable>()
 
-    let cartBtnListView: CartBtnList = {
+    lazy var cartBtnListView: CartBtnList = {
         let btnList = CartBtnList()
         btnList.translatesAutoresizingMaskIntoConstraints = false
         return btnList
     }()
 
-    let cartCountView: CartCount = {
+    lazy var cartCountView: CartCount = {
         let cartCount = CartCount()
         cartCount.translatesAutoresizingMaskIntoConstraints = false
         return cartCount

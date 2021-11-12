@@ -1,9 +1,18 @@
 
 import UIKit
 
+protocol ListCellViewModalProtocol: class {
+    var category: String { get }
+    var title: String { get }
+    var producer: String { get }
+    var price: String { get }
+    var imageUrl: String { get }
+    var selectedAmount: Int { get }
+}
+
 class ListCellViewModel: ListCellViewModalProtocol {
 
-    var category: String
+    var category: String = "Нет категории"
     var title: String
     var producer: String
     var price: String
@@ -12,7 +21,6 @@ class ListCellViewModel: ListCellViewModalProtocol {
 
     init(product: Product) {
 
-        category = product.category
         title = product.title
         producer = product.producer
         imageUrl = product.imageUrl
@@ -20,7 +28,13 @@ class ListCellViewModel: ListCellViewModalProtocol {
 
         // Убираем лишние нули после запятой, если они есть и выводим цену
         price = String(format: "%g", product.price) + " ₽"
-
+        
+        self.getFirstCategory(categories: product.categories)
     }
-
+    
+    private func getFirstCategory(categories: [Category]?) {
+        if let categories = categories, !categories.isEmpty, let firstCategory = categories.first {
+            self.category = firstCategory.title
+        }
+    }
 }

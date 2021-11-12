@@ -11,8 +11,6 @@ class ListViewController: UIViewController {
     // viewModel
     var viewModel: ListViewModelProtocol!
     var cancellable = Set<AnyCancellable>()
-    
-    var productList: [Product] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -21,12 +19,6 @@ class ListViewController: UIViewController {
     }
     
     private func settingUI() {
-
-        // Наблюдатель изменения товаров в корзине
-        NotificationCenter.default.addObserver(self, selector: #selector(updateCartCount), name: Notification.Name(rawValue: "notificationUpdateCartCount"), object: nil)
-
-        // Наблюдатель перехода в детальную информацию
-        NotificationCenter.default.addObserver(self, selector: #selector(showDetail), name: Notification.Name(rawValue: "notificationRedirectToDetail"), object: nil)
 
         // viewModel
         viewModel = ListViewModel()
@@ -46,7 +38,7 @@ class ListViewController: UIViewController {
         bindViewModelToView()
     }
 
-    func bindViewToViewModel() {
+    private func bindViewToViewModel() {
         NotificationCenter.default
                 .publisher(for: UITextField.textDidChangeNotification, object: searchForm)
                 .compactMap { $0.object as? UITextField }
@@ -58,13 +50,13 @@ class ListViewController: UIViewController {
                 .store(in: &cancellable)
     }
 
-    func bindViewModelToView() {
+    private func bindViewModelToView() {
 
         // Получение данных из viewModel
-        viewModel.output.$productList
+        viewModel.output.$reload
                 .receive(on: RunLoop.main)
-                .sink(receiveValue: { [weak self] products in
-                    self?.productList = products
+                .sink(receiveValue: { [weak self] reload in
+                    guard let reload = reload, reload else { return }
                     self?.tableView.reloadData()
                 }).store(in: &cancellable)
 
@@ -84,37 +76,6 @@ class ListViewController: UIViewController {
                 }).store(in: &cancellable)
 
     }
-
-    @objc func updateCartCount(notification: Notification) {
-
-        // Изменяем кол-во товара в корзине
-        guard let userInfo = notification.userInfo, let index = userInfo["index"] as? Int, let newCount = userInfo["count"] as? Int, let reload = userInfo["reload"] as? Bool, let viewModel = viewModel else { return }
-
-        // Записываем новое значение
-        productList[index].selectedAmount = newCount
-        
-        //  Обновление таблицы
-        if reload {
-            tableView.reloadData()
-        }
-
-    }
-
-    @objc func showDetail(notification: Notification) {
-
-        // Переход в детальную информацию
-        guard let userInfo = notification.userInfo, let index = userInfo["index"] as? Int, let viewModel = viewModel, !productList.isEmpty && productList.indices.contains(index) else { return }
-
-        // Выполняем переход в детальную информацию
-        if let detailViewController = DetailViewController.storyboardInstance() {
-            detailViewController.productIndex = index
-            detailViewController.productID = productList[index].id
-            detailViewController.productTitle = productList[index].title
-            detailViewController.productSelectedAmount = productList[index].selectedAmount
-            navigationController?.pushViewController(detailViewController, animated: true)
-        }
-
-    }
     
     @IBAction func removeSearch(_ sender: Any) {
 
@@ -127,34 +88,53 @@ class ListViewController: UIViewController {
         
     }
     
-    func hideKeyboard() {
+    private func updateCartCount(index: Int, value: Int, reload: Bool) {
+        if !viewModel.output.productList.indices.contains(index) {
+            return
+        }
+
+        viewModel.output.productList[index].selectedAmount = value
+        
+        if reload {
+            tableView.reloadData()
+        }
+    }
+    
+    private func hideKeyboard() {
         view.endEditing(true)
     }
     
 }
 
-extension ListViewController: UITableViewDataSource {
+extension ListViewController: UITableViewDelegate, UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         viewModel?.numberOfRows() ?? 0
     }
-
+    
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        return UITableView.automaticDimension
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return UITableView.automaticDimension
+    }
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-
+        
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "productCell", for: indexPath) as? ProductListTableCell, let viewModel = viewModel else { return UITableViewCell() }
-        let cellViewModel = self.viewModel.cellViewModel(product: productList[indexPath.row])
+        let cellViewModel = self.viewModel.cellViewModel(product: viewModel.output.productList[indexPath.row])
         cell.productIndex = indexPath.row
         cell.viewModel = cellViewModel
-
+        cell.delegate = self
+        
         return cell
-
+        
     }
-
-}
-
-extension ListViewController: UITableViewDelegate {
-
-    public func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+    
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+        cell.layoutIfNeeded()
+        
         // Проверяем что оторазили последний элемент и если есть, отображаем следующую страницу
         guard viewModel != nil else { return }
         viewModel.visibleCell(Index: indexPath.row)
@@ -172,6 +152,43 @@ extension ListViewController: UITextFieldDelegate {
         }
         
         return true
+        
+    }
+    
+}
+
+extension ListViewController: ProductListCellDelegate, DetailViewtDelegate {
+    
+    func changeCartCount(index: Int, value: Int, reload: Bool) {
+        
+        // Изменяем кол-во товара в корзине
+        if !viewModel.output.productList.indices.contains(index) {
+            return
+        }
+
+        // Записываем новое значение
+        updateCartCount(index: index, value: value, reload: reload)
+        
+    }
+    
+    func redirectToDetail(index: Int) {
+        
+        // Выполняем переход в детальную информацию
+        if !viewModel.output.productList.indices.contains(index) {
+            return
+        }
+        
+        // Выполняем переход в детальную информацию
+        if let detailViewController = DetailViewController.storyboardInstance() {
+
+            detailViewController.setProductData(productIndex: index,
+                                                productID: viewModel.output.productList[index].id,
+                                                productTitle: viewModel.output.productList[index].title,
+                                                productSelectedAmount: viewModel.output.productList[index].selectedAmount)
+            
+            detailViewController.delegate = self
+            navigationController?.pushViewController(detailViewController, animated: true)
+        }
         
     }
     

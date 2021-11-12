@@ -2,6 +2,11 @@
 import UIKit
 import Combine
 
+protocol ProductListCellDelegate: class {
+    func changeCartCount(index: Int, value: Int, reload: Bool)
+    func redirectToDetail(index: Int)
+}
+
 class ProductListTableCell: UITableViewCell {
     
     @IBOutlet weak var borderView: UIView!
@@ -28,6 +33,7 @@ class ProductListTableCell: UITableViewCell {
     }()
     
     var productIndex: Int?
+    weak var delegate: ProductListCellDelegate?
 
     weak var viewModel: ListCellViewModalProtocol? {
         willSet(viewModel) {
@@ -92,9 +98,7 @@ class ProductListTableCell: UITableViewCell {
                 
                 // Вывод корзины и кол-ва добавленых в корзину
                 self?.setCartButtons(count: count)
-                
-                // Обновляем значение в корзине в списке через наблюдатель
-                NotificationCenter.default.post(name: Notification.Name(rawValue: "notificationUpdateCartCount"), object: nil, userInfo: ["index": productIndex, "count": count, "reload": false])
+                self?.delegate?.changeCartCount(index: productIndex, value: count, reload: false)
                 
             }.store(in: &cancellable)
         
@@ -104,16 +108,14 @@ class ProductListTableCell: UITableViewCell {
         
         // Добавляем товар в карзину
         guard let productIndex = productIndex else { return }
-        
+
         // Вывод корзины и кол-ва добавленых в корзину
         setCartButtons(count: 1)
-        
-        // Обновляем значение в корзине в списке через наблюдатель
-        NotificationCenter.default.post(name: Notification.Name(rawValue: "notificationUpdateCartCount"), object: nil, userInfo: ["index": productIndex, "count": 1, "reload": false])
+        delegate?.changeCartCount(index: productIndex, value: 1, reload: false)
         
     }
     
-    func setBorder() {
+    private func setBorder() {
         
         // Устанавливаем обводку
         borderView.layer.cornerRadius = 10.0
@@ -122,7 +124,7 @@ class ProductListTableCell: UITableViewCell {
         
     }
     
-    func setCartButtons(count: Int) {
+    private func setCartButtons(count: Int) {
 
         // Вывод корзины и кол-ва добавленых в корзину
         if count > 0 {
@@ -159,16 +161,12 @@ class ProductListTableCell: UITableViewCell {
     }
     
     @objc func detailTapped() {
-        
         // Выполняем переход в детальную информацию
         guard let productIndex = productIndex else { return }
-
-        // Уведомляем наблюдатель о переходе в детальную информацию
-        NotificationCenter.default.post(name: Notification.Name(rawValue: "notificationRedirectToDetail"), object: nil, userInfo: ["index": productIndex])
-        
+        delegate?.redirectToDetail(index: productIndex)
     }
     
-    func setClicable() {
+    private func setClicable() {
         
         // Клик на изображение для перехода в детальную информацию
         let tapImageGesture = UITapGestureRecognizer(target: self, action: #selector(detailTapped))

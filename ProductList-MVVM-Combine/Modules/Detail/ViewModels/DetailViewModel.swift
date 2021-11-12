@@ -2,89 +2,79 @@
 import UIKit
 import Combine
 
+protocol DetailViewModeltDelegate: class {
+    func changeCartCount(index: Int, value: Int, reload: Bool)
+}
+
+protocol DetailViewModelProtocol {
+    var input: InputDetailView { get }
+    var output: OutputDetailView { get }
+    var delegate: DetailViewModeltDelegate? { get set }
+    func numberOfRows() -> Int
+    func changeCartCount(index: Int, count: Int, reload: Bool)
+    func cellViewModel(index: Int) -> DetailCellViewModalProtocol?
+}
+
 class DetailViewModel: DetailViewModelProtocol {
 
-    let id: Int
-
-    var title: String = ""
-    var producer: String = ""
-    var shortDescription: String = ""
-    var imageUrl: String = ""
-    var image: UIImage
-    var price: String = ""
-    var selectedAmount: Int = 0
-
     var cancellable = Set<AnyCancellable>()
+    weak var delegate: DetailViewModeltDelegate?
 
     let input: InputDetailView
     let output: OutputDetailView
 
-    init(productID: Int, amount: Int) {
+    init() {
 
         // Bind
         input = InputDetailView()
         output = OutputDetailView()
-
-        // setup
-        id = productID
-        selectedAmount = amount
-        image = UIImage(named: "nophoto")!
-
-        // Load
-        loadProduct()
-
+        setupBindings()
+        
+    }
+    
+    private func setupBindings() {
+        input.$id
+            .sink(receiveValue: { [weak self] id in
+                guard let id = id else { return }
+                self?.loadProduct(id: id)
+            }).store(in: &cancellable)
     }
 
-    func loadProduct() {
+    private func loadProduct(id: Int) {
+        output.image = UIImage(named: "nophoto")!
 
         // Отправляем запрос загрузки товара
-        ProductNetworking.getOneProduct(id: id)
+        ProductDetailService.getOneProduct(id: id)?
                 .sink { [weak self] data in
                     
                     guard let data = data as? Data else { return }
                     
-                    do {
-
-                        // Проверяем что данные были успешно обработаны
-                        let json = try JSONSerialization.jsonObject(with: data, options: [])
-                        let response = try ProductResponse(product: json)
+                    var productResponse = ProductResponse()
+                    productResponse.decode(data: data)
+                    
+                    if let product = productResponse.product {
                         
-                        if let product = response.product {
-
-                            self?.title = product.title
-                            self?.producer = product.producer
-                            self?.shortDescription = product.shortDescription
-                            self?.imageUrl = product.imageUrl
-
-                            // Убираем лишние нули после запятой, если они есть и выводим цену
-                            self?.price = String(format: "%g", product.price) + " ₽"
-
-                            // categories
-                            self?.output.categoryList = product.categories
-
-                            // Загрузка изображения, если ссылка пуста, то выводится изображение по умолчанию
-                            if !(self?.imageUrl.isEmpty ?? false) {
-
-                                // Загрузка изображения
-                                if let imageURL = URL(string: (self?.imageUrl)!) {
-
-                                    ImageNetworking.shared.getImage(link: imageURL) { (img) in
-                                        DispatchQueue.global(qos: .userInitiated).sync {
-                                            self?.image = img
-                                        }
+                        // Загрузка изображения, если ссылка пуста, то выводится изображение по умолчанию
+                        if !(product.imageUrl.isEmpty) {
+                            
+                            // Загрузка изображения
+                            if let imageURL = URL(string: (product.imageUrl)) {
+                                
+                                ImageNetworking.shared.getImage(link: imageURL) { img in
+                                    DispatchQueue.global(qos: .userInitiated).sync {
+                                        self?.output.image = img
                                     }
-
                                 }
-
+                                
                             }
-
-                            // Обновляем данные в контроллере
-                            self?.output.dataReceived = true
-
+                            
                         }
 
-                    } catch {
-                        print(error)
+                        // Обновляем данные в контроллере
+                        self?.output.product = product
+                        self?.output.product?.selectedAmount = self?.input.selectedAmount ?? 0
+                        self?.output.loaded = true
+                        
                     }
 
                 }.store(in: &cancellable)
@@ -92,28 +82,28 @@ class DetailViewModel: DetailViewModelProtocol {
     }
 
     func numberOfRows() -> Int {
-        output.categoryList.count
+        output.product?.categories?.count ?? 0
     }
 
     func cellViewModel(index: Int) -> DetailCellViewModalProtocol? {
-        let category = output.categoryList[index]
+        guard let category = output.product?.categories?[index] else { return nil }
         return DetailCellViewModel(category: category)
     }
 
-    func changeCartCount(index: Int, count: Int) {
-
+    func changeCartCount(index: Int, count: Int, reload: Bool) {
         // Обновляем значение
-        selectedAmount = count
-
-        // Обновляем значение в корзине в списке через наблюдатель
-        NotificationCenter.default.post(name: Notification.Name(rawValue: "notificationUpdateCartCount"), object: nil, userInfo: ["index": index, "count": count, "reload": true])
-
+        output.product?.selectedAmount = count
+        delegate?.changeCartCount(index: index, value: count, reload: reload)
     }
 }
 
-class InputDetailView {}
+class InputDetailView {
+    var selectedAmount: Int?
+    @Published var id: Int?
+}
 
 class OutputDetailView {
-    @Published var categoryList: [Category] = []
-    @Published var dataReceived: Bool = false
+    @Published var product: Product?
+    var image: UIImage?
+    @Published var loaded: Bool = false
 }

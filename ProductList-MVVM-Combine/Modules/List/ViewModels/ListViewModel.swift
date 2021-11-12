@@ -2,15 +2,18 @@
 import UIKit
 import Combine
 
+protocol ListViewModelProtocol {
+    func numberOfRows() -> Int
+    func visibleCell(Index: Int)
+    var input: InputListView { get }
+    var output: OutputListView { get }
+    func cellViewModel(product: Product) -> ListCellViewModalProtocol?
+}
+
 class ListViewModel: ListViewModelProtocol {
 
     // Поиск
-    var searchString = ""
     private let searchOperationQueue = OperationQueue()
-
-    // Страницы
-    var page: Int = 1
-    var haveNextPage: Bool = false
 
     let input: InputListView
     let output: OutputListView
@@ -53,7 +56,7 @@ class ListViewModel: ListViewModelProtocol {
                 // Выполняем поиск
 
                 // Задаем первую страницу
-                self.page = 1
+                self.input.page = 1
 
                 // Запрос данных
                 self.loadProducts()
@@ -66,46 +69,39 @@ class ListViewModel: ListViewModelProtocol {
 
     }
 
-    func loadProducts() {
+    private func loadProducts() {
 
         // Отправляем запрос загрузки товаров
-        ProductNetworking.getProducts(page: page, searchText: input.searchText)
+        ProductListService.getProducts(page: input.page, searchText: input.searchText)?
                 .sink { [weak self] data in
                     
                     guard let data = data as? Data else { return }
-                    
-                    do {
 
-                        // Проверяем что данные были успешно обработаны
-                        let json = try JSONSerialization.jsonObject(with: data, options: [])
-                        let response = try ProductResponse(products: json)
+                    var productListResponse = ProductListResponse()
+                    productListResponse.decode(data: data)
+                    var products = productListResponse.products
 
-                        // Обрабатываем полученные товары
-                        var products = response.products
-
-                        // Так как API не позвращает отдельный ключ, который говорит о том, что есть следующая страница, определяем это вручную
-                        if !products.isEmpty && products.count == ProductNetworking.maxProductsOnPage {
-
-                            // Задаем наличие следующей страницы
-                            self?.haveNextPage = true
-
-                            // Удаляем последний элемент, который используется только для проверки на наличие следующей страницы
-                            products.remove(at: products.count - 1)
-
-                        }
-
-                        // Устанавливаем загруженные товары и обновляем таблицу
-                        // append contentsOf так как у нас метод грузит как первую страницу, так и последующие
-                        self?.appendProducts(products: products)
-
-                        // Обновляем данные в контроллере
-                        if self?.page == 1 {
-                            self?.output.showLoadIndicator = false
-                        }
-
-                    } catch {
-                        print(error)
+                    // Так как API не позвращает отдельный ключ, который говорит о том, что есть следующая страница, определяем это вручную
+                    if !products.isEmpty && products.count == Constants.Settings.maxProductsOnPage {
+                        
+                        // Задаем наличие следующей страницы
+                        self?.input.haveNextPage = true
+                        
+                        // Удаляем последний элемент, который используется только для проверки на наличие следующей страницы
+                        products.remove(at: products.count - 1)
+                        
                     }
+                    
+                    // Устанавливаем загруженные товары и обновляем таблицу
+                    // append contentsOf так как у нас метод грузит как первую страницу, так и последующие
+                    self?.appendProducts(products: products)
+                    
+                    // Обновляем данные в контроллере
+                    if self?.input.page == 1 {
+                        self?.output.showLoadIndicator = false
+                    }
+                    
+                    self?.output.reload = true
 
                 }.store(in: &cancellable)
 
@@ -118,11 +114,11 @@ class ListViewModel: ListViewModelProtocol {
     func visibleCell(Index: Int) {
 
         // Проверяем что оторазили последний элемент и если есть, отображаем следующую страницу
-        if !output.productList.isEmpty && (output.productList.count - 1) == Index, haveNextPage {
+        if !output.productList.isEmpty && (output.productList.count - 1) == Index, input.haveNextPage {
 
             // Задаем новую страницу
-            haveNextPage = false
-            page += 1
+            input.haveNextPage = false
+            input.page += 1
 
             // Запрос данных
             loadProducts()
@@ -131,25 +127,28 @@ class ListViewModel: ListViewModelProtocol {
 
     }
 
-    func removeAllProducts() {
+    private func removeAllProducts() {
         output.productList.removeAll()
     }
 
-    func appendProducts(products: [Product]) {
+    private func appendProducts(products: [Product]) {
         output.productList.append(contentsOf: products)
     }
 
     func cellViewModel(product: Product) -> ListCellViewModalProtocol? {
         ListCellViewModel(product: product)
     }
-
+    
 }
 
 class InputListView {
     @Published var searchText: String = ""
+    var page: Int = 1
+    var haveNextPage: Bool = false
 }
 
 class OutputListView {
     @Published var productList: [Product] = []
     @Published var showLoadIndicator: Bool = true
+    @Published var reload: Bool?
 }

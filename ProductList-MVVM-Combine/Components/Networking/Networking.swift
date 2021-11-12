@@ -4,19 +4,8 @@ import Combine
 
 class Networking {
 
-    enum LinkList: String {
-        case list = "https://rstestapi.redsoftdigital.com/api/v1/products"
-        case product = "https://rstestapi.redsoftdigital.com/api/v1/products/"
-    }
-
-    enum HTTPError: LocalizedError {
-        case statusCode
-        case post
-    }
-
     // Создаем синглтон для обращения к методам класса
-    private init() {
-    }
+    private init() {}
     static let shared = Networking()
 
     public func getData(url: URL) -> AnyPublisher<Any, Never> {

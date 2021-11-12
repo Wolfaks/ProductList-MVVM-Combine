@@ -43,7 +43,7 @@ import Combine
         
     }
     
-    func setupView() {
+    private func setupView() {
         
         let view = loadFromNib()
         view.frame = bounds

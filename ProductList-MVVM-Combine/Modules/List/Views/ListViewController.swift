@@ -11,6 +11,8 @@ class ListViewController: UIViewController {
     // viewModel
     var viewModel: ListViewModelProtocol!
     var cancellable = Set<AnyCancellable>()
+    
+    weak var detailViewController: DetailViewControllerProtocol?
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -27,7 +29,6 @@ class ListViewController: UIViewController {
         searchForm.delegate = self
 
         // tableView
-        tableView.rowHeight = 160.0
         tableView.delegate = self
         tableView.dataSource = self
         
@@ -59,6 +60,15 @@ class ListViewController: UIViewController {
                     guard let reload = reload, reload else { return }
                     self?.tableView.reloadData()
                 }).store(in: &cancellable)
+        
+        // Переход в полный вид
+        viewModel.output.$selectProductIndex
+                .sink(receiveValue: { [weak self] index in
+                    guard let index = index else { return }
+                    self?.redirectToDetail(index: index)
+                }).store(in: &cancellable)
+        
+       
 
         // Отображаем или скрываем анимацию загрузки
         viewModel.output.$showLoadIndicator
@@ -74,7 +84,16 @@ class ListViewController: UIViewController {
                     }
 
                 }).store(in: &cancellable)
-
+    }
+    
+    private func bindDetailUpdateCard() {
+        // Обновление товара в корзине
+        self.detailViewController?.cardCountUpdatePublisher
+                .receive(on: RunLoop.main)
+                .sink(receiveValue: { [weak self] cardCountUpdate in
+                    guard let cardCountUpdate = cardCountUpdate else { return }
+                    self?.updateCartCount(index: cardCountUpdate.index, value: cardCountUpdate.value, reload: cardCountUpdate.reload)
+                }).store(in: &cancellable)
     }
     
     @IBAction func removeSearch(_ sender: Any) {
@@ -88,20 +107,40 @@ class ListViewController: UIViewController {
         
     }
     
-    private func updateCartCount(index: Int, value: Int, reload: Bool) {
-        if !viewModel.output.productList.indices.contains(index) {
-            return
+    private func hideKeyboard() {
+        view.endEditing(true)
+    }
+    
+    private func redirectToDetail(index: Int) {
+        
+        // Выполняем переход в детальную информацию
+        if !viewModel.output.productList.indices.contains(index) { return }
+        
+        // Выполняем переход в детальную информацию
+        detailViewController = DetailViewController.storyboardInstance()
+        if let detailViewController = detailViewController as? UIViewController {
+            self.detailViewController?.setProductData(productIndex: index,
+                                                productID: viewModel.output.productList[index].id,
+                                                productTitle: viewModel.output.productList[index].title,
+                                                productSelectedAmount: viewModel.output.productList[index].selectedAmount)
+            
+            bindDetailUpdateCard()
+            
+            navigationController?.pushViewController(detailViewController, animated: true)
         }
+        
+    }
+    
+    private func updateCartCount(index: Int, value: Int, reload: Bool) {
+        
+        if !viewModel.output.productList.indices.contains(index) { return }
 
         viewModel.output.productList[index].selectedAmount = value
         
         if reload {
             tableView.reloadData()
         }
-    }
-    
-    private func hideKeyboard() {
-        view.endEditing(true)
+        
     }
     
 }
@@ -126,7 +165,7 @@ extension ListViewController: UITableViewDelegate, UITableViewDataSource {
         let cellViewModel = self.viewModel.cellViewModel(product: viewModel.output.productList[indexPath.row])
         cell.productIndex = indexPath.row
         cell.viewModel = cellViewModel
-        cell.delegate = self
+        cell.listViewModel = viewModel
         
         return cell
         
@@ -152,43 +191,6 @@ extension ListViewController: UITextFieldDelegate {
         }
         
         return true
-        
-    }
-    
-}
-
-extension ListViewController: ProductListCellDelegate, DetailViewtDelegate {
-    
-    func changeCartCount(index: Int, value: Int, reload: Bool) {
-        
-        // Изменяем кол-во товара в корзине
-        if !viewModel.output.productList.indices.contains(index) {
-            return
-        }
-
-        // Записываем новое значение
-        updateCartCount(index: index, value: value, reload: reload)
-        
-    }
-    
-    func redirectToDetail(index: Int) {
-        
-        // Выполняем переход в детальную информацию
-        if !viewModel.output.productList.indices.contains(index) {
-            return
-        }
-        
-        // Выполняем переход в детальную информацию
-        if let detailViewController = DetailViewController.storyboardInstance() {
-
-            detailViewController.setProductData(productIndex: index,
-                                                productID: viewModel.output.productList[index].id,
-                                                productTitle: viewModel.output.productList[index].title,
-                                                productSelectedAmount: viewModel.output.productList[index].selectedAmount)
-            
-            detailViewController.delegate = self
-            navigationController?.pushViewController(detailViewController, animated: true)
-        }
         
     }
     

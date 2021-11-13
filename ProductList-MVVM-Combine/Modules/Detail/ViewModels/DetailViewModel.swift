@@ -2,14 +2,10 @@
 import UIKit
 import Combine
 
-protocol DetailViewModeltDelegate: class {
-    func changeCartCount(index: Int, value: Int, reload: Bool)
-}
-
 protocol DetailViewModelProtocol {
     var input: InputDetailView { get }
     var output: OutputDetailView { get }
-    var delegate: DetailViewModeltDelegate? { get set }
+    var cardCountUpdatePublisher: Published<CardCountUpdate?>.Publisher { get }
     func numberOfRows() -> Int
     func changeCartCount(index: Int, count: Int, reload: Bool)
     func cellViewModel(index: Int) -> DetailCellViewModalProtocol?
@@ -18,10 +14,12 @@ protocol DetailViewModelProtocol {
 class DetailViewModel: DetailViewModelProtocol {
 
     var cancellable = Set<AnyCancellable>()
-    weak var delegate: DetailViewModeltDelegate?
 
     let input: InputDetailView
     let output: OutputDetailView
+    
+    @Published var cardCountUpdate: CardCountUpdate?
+    var cardCountUpdatePublisher: Published<CardCountUpdate?>.Publisher { $cardCountUpdate }
 
     init() {
 
@@ -93,7 +91,7 @@ class DetailViewModel: DetailViewModelProtocol {
     func changeCartCount(index: Int, count: Int, reload: Bool) {
         // Обновляем значение
         output.product?.selectedAmount = count
-        delegate?.changeCartCount(index: index, value: count, reload: reload)
+        cardCountUpdate = CardCountUpdate(index: index, value: count, reload: reload)
     }
 }
 

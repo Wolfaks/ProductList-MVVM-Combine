@@ -2,11 +2,11 @@
 import UIKit
 import Combine
 
-protocol ListViewModelProtocol {
-    func numberOfRows() -> Int
-    func visibleCell(Index: Int)
+protocol ListViewModelProtocol: class {
     var input: InputListView { get }
     var output: OutputListView { get }
+    func numberOfRows() -> Int
+    func visibleCell(Index: Int)
     func cellViewModel(product: Product) -> ListCellViewModalProtocol?
 }
 
@@ -150,5 +150,6 @@ class InputListView {
 class OutputListView {
     @Published var productList: [Product] = []
     @Published var showLoadIndicator: Bool = true
+    @Published var selectProductIndex: Int?
     @Published var reload: Bool?
 }

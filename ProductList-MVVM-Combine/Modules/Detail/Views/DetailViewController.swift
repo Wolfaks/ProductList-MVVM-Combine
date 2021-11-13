@@ -2,16 +2,20 @@
 import UIKit
 import Combine
 
-protocol DetailViewtDelegate: class {
-    func changeCartCount(index: Int, value: Int, reload: Bool)
+protocol DetailViewControllerProtocol: class {
+    var cardCountUpdatePublisher: Published<CardCountUpdate?>.Publisher { get }
+    func setProductData(productIndex: Int, productID: Int, productTitle: String, productSelectedAmount: Int)
 }
 
-class DetailViewController: UIViewController {
+class DetailViewController: UIViewController, DetailViewControllerProtocol {
     
     var productIndex: Int?
     var productID: Int?
     var productTitle: String?
     var productSelectedAmount = 0
+    
+    @Published var cardCountUpdate: CardCountUpdate?
+    var cardCountUpdatePublisher: Published<CardCountUpdate?>.Publisher { $cardCountUpdate }
     
     @IBOutlet weak var loadIndicator: UIActivityIndicatorView!
     @IBOutlet weak var infoStackView: UIStackView!
@@ -26,10 +30,8 @@ class DetailViewController: UIViewController {
     @IBOutlet weak var cartCountView: CartCount!
 
     // viewModel
-    var viewModel: DetailViewModelProtocol!
+    var viewModel: DetailViewModelProtocol?
     var cancellable = Set<AnyCancellable>()
-    
-    weak var delegate: DetailViewtDelegate?
 
     static func storyboardInstance() -> DetailViewController? {
         // Для перехода на эту страницу
@@ -62,12 +64,10 @@ class DetailViewController: UIViewController {
 
             // viewModel
             viewModel = DetailViewModel()
-            viewModel.input.selectedAmount = productSelectedAmount
-            viewModel.input.id = id
-            viewModel.delegate = self
+            viewModel?.input.selectedAmount = productSelectedAmount
+            viewModel?.input.id = id
 
             // tableView
-            tableView.rowHeight = 32.0
             tableView.delegate = self
             tableView.dataSource = self
 
@@ -82,11 +82,11 @@ class DetailViewController: UIViewController {
     private func bindViewModelToView() {
 
         // Получение данных из viewModel
-        viewModel.output.$loaded
+        viewModel?.output.$loaded
                 .receive(on: RunLoop.main)
                 .sink(receiveValue: { [weak self] loaded in
 
-                    if loaded, let product = self?.viewModel.output.product {
+                    if loaded, let product = self?.viewModel?.output.product {
 
                         // Скрываем анимацию загрузки
                         self?.loadIndicator.stopAnimating()
@@ -97,7 +97,7 @@ class DetailViewController: UIViewController {
                         // Выводим информацию
                         self?.titleLabel.text = product.title
                         self?.producerLabel.text = product.producer
-                        self?.image.image = self?.viewModel.output.image
+                        self?.image.image = self?.viewModel?.output.image
 
                         // Убираем лишние нули после запятой, если они есть и выводим цену
                         self?.priceLabel.text = String(format: "%g", product.price) + " ₽"
@@ -133,10 +133,18 @@ class DetailViewController: UIViewController {
                 guard let productIndex = self?.productIndex, self?.viewModel != nil else { return }
                 
                 // Обновляем кнопку в отображении
-                self?.viewModel.changeCartCount(index: productIndex, count: count, reload: true)
+                self?.viewModel?.changeCartCount(index: productIndex, count: count, reload: true)
                 self?.setCartButtons()
                 
             }.store(in: &cancellable)
+        
+        // Обновление товара в корзине
+        self.viewModel?.cardCountUpdatePublisher
+                .receive(on: RunLoop.main)
+                .sink(receiveValue: { [weak self] cardCountUpdate in
+                    guard let cardCountUpdate = cardCountUpdate else { return }
+                    self?.updateCartCount(index: cardCountUpdate.index, value: cardCountUpdate.value, reload: cardCountUpdate.reload)
+                }).store(in: &cancellable)
 
     }
     
@@ -148,7 +156,7 @@ class DetailViewController: UIViewController {
         let addCartCount = 1
         
         // Обновляем кнопку в отображении
-        viewModel.changeCartCount(index: productIndex, count: addCartCount, reload: true)
+        viewModel?.changeCartCount(index: productIndex, count: addCartCount, reload: true)
         setCartButtons()
         
     }
@@ -188,6 +196,11 @@ class DetailViewController: UIViewController {
         
     }
     
+    private func updateCartCount(index: Int, value: Int, reload: Bool) {
+        // Записываем новое значение
+        cardCountUpdate = CardCountUpdate(index: index, value: value, reload: reload)
+    }
+    
 }
 
 extension DetailViewController: UITableViewDelegate, UITableViewDataSource {
@@ -219,13 +232,4 @@ extension DetailViewController: UITableViewDelegate, UITableViewDataSource {
         cell.layoutIfNeeded()
     }
 
-}
-
-extension DetailViewController: DetailViewModeltDelegate {
-    
-    func changeCartCount(index: Int, value: Int, reload: Bool) {
-        // Записываем новое значение
-        delegate?.changeCartCount(index: index, value: value, reload: reload)
-    }
-    
 }

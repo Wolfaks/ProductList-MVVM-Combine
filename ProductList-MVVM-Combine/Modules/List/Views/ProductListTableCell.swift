@@ -2,11 +2,6 @@
 import UIKit
 import Combine
 
-protocol ProductListCellDelegate: class {
-    func changeCartCount(index: Int, value: Int, reload: Bool)
-    func redirectToDetail(index: Int)
-}
-
 class ProductListTableCell: UITableViewCell {
     
     @IBOutlet weak var borderView: UIView!
@@ -18,6 +13,7 @@ class ProductListTableCell: UITableViewCell {
     @IBOutlet weak var productPrice: UILabel!
     @IBOutlet weak var stackFooterCell: UIStackView!
     
+    weak var listViewModel: ListViewModelProtocol?
     var cancellable = Set<AnyCancellable>()
 
     lazy var cartBtnListView: CartBtnList = {
@@ -33,7 +29,6 @@ class ProductListTableCell: UITableViewCell {
     }()
     
     var productIndex: Int?
-    weak var delegate: ProductListCellDelegate?
 
     weak var viewModel: ListCellViewModalProtocol? {
         willSet(viewModel) {
@@ -98,7 +93,7 @@ class ProductListTableCell: UITableViewCell {
                 
                 // Вывод корзины и кол-ва добавленых в корзину
                 self?.setCartButtons(count: count)
-                self?.delegate?.changeCartCount(index: productIndex, value: count, reload: false)
+                self?.updateCartCountList(index: productIndex, value: count)
                 
             }.store(in: &cancellable)
         
@@ -111,8 +106,13 @@ class ProductListTableCell: UITableViewCell {
 
         // Вывод корзины и кол-ва добавленых в корзину
         setCartButtons(count: 1)
-        delegate?.changeCartCount(index: productIndex, value: 1, reload: false)
+        updateCartCountList(index: productIndex, value: 1)
         
+    }
+    
+    private func updateCartCountList(index: Int, value: Int) {
+        if let productList = listViewModel?.output.productList, !productList.indices.contains(index) { return }
+        listViewModel?.output.productList[index].selectedAmount = value
     }
     
     private func setBorder() {
@@ -163,7 +163,7 @@ class ProductListTableCell: UITableViewCell {
     @objc func detailTapped() {
         // Выполняем переход в детальную информацию
         guard let productIndex = productIndex else { return }
-        delegate?.redirectToDetail(index: productIndex)
+        listViewModel?.output.selectProductIndex = productIndex
     }
     
     private func setClicable() {

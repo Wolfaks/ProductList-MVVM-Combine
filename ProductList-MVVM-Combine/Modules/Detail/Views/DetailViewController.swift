@@ -31,7 +31,7 @@ class DetailViewController: UIViewController, DetailViewControllerProtocol {
 
     // viewModel
     var viewModel: DetailViewModelProtocol?
-    var cancellable = Set<AnyCancellable>()
+    private var cancellable = Set<AnyCancellable>()
 
     static func storyboardInstance() -> DetailViewController? {
         // Для перехода на эту страницу
@@ -133,17 +133,18 @@ class DetailViewController: UIViewController, DetailViewControllerProtocol {
                 guard let productIndex = self?.productIndex, self?.viewModel != nil else { return }
                 
                 // Обновляем кнопку в отображении
-                self?.viewModel?.changeCartCount(index: productIndex, count: count, reload: true)
+                let cardCountUpdate = CardCountUpdate(index: productIndex, value: count, reload: true)
+                self?.viewModel?.changeCartCount(cardCountUpdate: cardCountUpdate)
                 self?.setCartButtons()
                 
             }.store(in: &cancellable)
         
         // Обновление товара в корзине
-        self.viewModel?.cardCountUpdatePublisher
+        self.viewModel?.output.cardCountUpdatePublisher
                 .receive(on: RunLoop.main)
                 .sink(receiveValue: { [weak self] cardCountUpdate in
                     guard let cardCountUpdate = cardCountUpdate else { return }
-                    self?.updateCartCount(index: cardCountUpdate.index, value: cardCountUpdate.value, reload: cardCountUpdate.reload)
+                    self?.updateCartCount(cardCountUpdate: cardCountUpdate)
                 }).store(in: &cancellable)
 
     }
@@ -156,7 +157,8 @@ class DetailViewController: UIViewController, DetailViewControllerProtocol {
         let addCartCount = 1
         
         // Обновляем кнопку в отображении
-        viewModel?.changeCartCount(index: productIndex, count: addCartCount, reload: true)
+        let cardCountUpdate = CardCountUpdate(index: productIndex, value: addCartCount, reload: true)
+        viewModel?.changeCartCount(cardCountUpdate: cardCountUpdate)
         setCartButtons()
         
     }
@@ -196,9 +198,9 @@ class DetailViewController: UIViewController, DetailViewControllerProtocol {
         
     }
     
-    private func updateCartCount(index: Int, value: Int, reload: Bool) {
+    private func updateCartCount(cardCountUpdate: CardCountUpdate) {
         // Записываем новое значение
-        cardCountUpdate = CardCountUpdate(index: index, value: value, reload: reload)
+        self.cardCountUpdate = cardCountUpdate
     }
     
 }

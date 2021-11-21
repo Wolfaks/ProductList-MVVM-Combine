@@ -14,7 +14,7 @@ class ProductListTableCell: UITableViewCell {
     @IBOutlet weak var stackFooterCell: UIStackView!
     
     weak var listViewModel: ListViewModelProtocol?
-    var cancellable = Set<AnyCancellable>()
+    private var cancellable = Set<AnyCancellable>()
 
     lazy var cartBtnListView: CartBtnList = {
         let btnList = CartBtnList()

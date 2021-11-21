@@ -10,7 +10,7 @@ class ListViewController: UIViewController {
 
     // viewModel
     var viewModel: ListViewModelProtocol!
-    var cancellable = Set<AnyCancellable>()
+    private var cancellable = Set<AnyCancellable>()
     
     weak var detailViewController: DetailViewControllerProtocol?
 
@@ -92,7 +92,7 @@ class ListViewController: UIViewController {
                 .receive(on: RunLoop.main)
                 .sink(receiveValue: { [weak self] cardCountUpdate in
                     guard let cardCountUpdate = cardCountUpdate else { return }
-                    self?.updateCartCount(index: cardCountUpdate.index, value: cardCountUpdate.value, reload: cardCountUpdate.reload)
+                    self?.updateCartCount(cardCountUpdate: cardCountUpdate)
                 }).store(in: &cancellable)
     }
     
@@ -131,13 +131,13 @@ class ListViewController: UIViewController {
         
     }
     
-    private func updateCartCount(index: Int, value: Int, reload: Bool) {
+    private func updateCartCount(cardCountUpdate: CardCountUpdate) {
         
-        if !viewModel.output.productList.indices.contains(index) { return }
+        if !viewModel.output.productList.indices.contains(cardCountUpdate.index) { return }
 
-        viewModel.output.productList[index].selectedAmount = value
+        viewModel.output.productList[cardCountUpdate.index].selectedAmount = cardCountUpdate.value
         
-        if reload {
+        if cardCountUpdate.reload {
             tableView.reloadData()
         }
         
@@ -176,7 +176,7 @@ extension ListViewController: UITableViewDelegate, UITableViewDataSource {
         
         // Проверяем что оторазили последний элемент и если есть, отображаем следующую страницу
         guard viewModel != nil else { return }
-        viewModel.visibleCell(Index: indexPath.row)
+        viewModel.visibleCell(index: indexPath.row)
     }
 
 }

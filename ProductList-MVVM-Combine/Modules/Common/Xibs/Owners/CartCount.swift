@@ -22,7 +22,7 @@ import Combine
     var view: UIView!
     var nibName: String = "CartCount"
     
-    var cancellable = Set<AnyCancellable>()
+    private var cancellable = Set<AnyCancellable>()
     
     override init(frame: CGRect) {
         super.init(frame: frame)

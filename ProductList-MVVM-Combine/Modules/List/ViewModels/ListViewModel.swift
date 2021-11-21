@@ -6,7 +6,7 @@ protocol ListViewModelProtocol: class {
     var input: InputListView { get }
     var output: OutputListView { get }
     func numberOfRows() -> Int
-    func visibleCell(Index: Int)
+    func visibleCell(index: Int)
     func cellViewModel(product: Product) -> ListCellViewModalProtocol?
 }
 
@@ -14,10 +14,13 @@ class ListViewModel: ListViewModelProtocol {
 
     // Поиск
     private let searchOperationQueue = OperationQueue()
+    
+    private var lastID: Int = 0
+    private var page: Int = 1
 
     let input: InputListView
     let output: OutputListView
-    var cancellable = Set<AnyCancellable>()
+    private var cancellable = Set<AnyCancellable>()
 
     init() {
 
@@ -39,7 +42,7 @@ class ListViewModel: ListViewModelProtocol {
     private func changeSearchText(with text: String?) {
 
         // Проверяем измененный в форме текст
-        guard let searchString = text else { return }
+        guard text != nil else { return }
 
         // Очищаем старые данные и обновляем таблицу
         removeAllProducts()
@@ -56,7 +59,7 @@ class ListViewModel: ListViewModelProtocol {
                 // Выполняем поиск
 
                 // Задаем первую страницу
-                self.input.page = 1
+                self.page = 1
 
                 // Запрос данных
                 self.loadProducts()
@@ -70,9 +73,11 @@ class ListViewModel: ListViewModelProtocol {
     }
 
     private func loadProducts() {
+        
+        lastID = 0
 
         // Отправляем запрос загрузки товаров
-        ProductListService.getProducts(page: input.page, searchText: input.searchText)?
+        ProductListService.getProducts(page: page, searchText: input.searchText)?
                 .sink { [weak self] data in
                     
                     guard let data = data as? Data else { return }
@@ -83,12 +88,12 @@ class ListViewModel: ListViewModelProtocol {
 
                     // Так как API не позвращает отдельный ключ, который говорит о том, что есть следующая страница, определяем это вручную
                     if !products.isEmpty && products.count == Constants.Settings.maxProductsOnPage {
-                        
-                        // Задаем наличие следующей страницы
-                        self?.input.haveNextPage = true
-                        
+                                                
                         // Удаляем последний элемент, который используется только для проверки на наличие следующей страницы
                         products.remove(at: products.count - 1)
+                        
+                        // Получаем id последнего продукта
+                        self?.lastID = products.last?.id ?? 0
                         
                     }
                     
@@ -97,7 +102,7 @@ class ListViewModel: ListViewModelProtocol {
                     self?.appendProducts(products: products)
                     
                     // Обновляем данные в контроллере
-                    if self?.input.page == 1 {
+                    if self?.page == 1 {
                         self?.output.showLoadIndicator = false
                     }
                     
@@ -111,14 +116,13 @@ class ListViewModel: ListViewModelProtocol {
         output.productList.count
     }
 
-    func visibleCell(Index: Int) {
+    func visibleCell(index: Int) {
 
         // Проверяем что оторазили последний элемент и если есть, отображаем следующую страницу
-        if !output.productList.isEmpty && (output.productList.count - 1) == Index, input.haveNextPage {
-
+        if !output.productList.isEmpty && output.productList.indices.contains(index) && lastID > 0 && lastID == output.productList[index].id {
+            
             // Задаем новую страницу
-            input.haveNextPage = false
-            input.page += 1
+            page += 1
 
             // Запрос данных
             loadProducts()
@@ -143,8 +147,6 @@ class ListViewModel: ListViewModelProtocol {
 
 class InputListView {
     @Published var searchText: String = ""
-    var page: Int = 1
-    var haveNextPage: Bool = false
 }
 
 class OutputListView {

@@ -5,21 +5,17 @@ import Combine
 protocol DetailViewModelProtocol {
     var input: InputDetailView { get }
     var output: OutputDetailView { get }
-    var cardCountUpdatePublisher: Published<CardCountUpdate?>.Publisher { get }
     func numberOfRows() -> Int
-    func changeCartCount(index: Int, count: Int, reload: Bool)
+    func changeCartCount(cardCountUpdate: CardCountUpdate)
     func cellViewModel(index: Int) -> DetailCellViewModalProtocol?
 }
 
 class DetailViewModel: DetailViewModelProtocol {
 
-    var cancellable = Set<AnyCancellable>()
+    private var cancellable = Set<AnyCancellable>()
 
     let input: InputDetailView
     let output: OutputDetailView
-    
-    @Published var cardCountUpdate: CardCountUpdate?
-    var cardCountUpdatePublisher: Published<CardCountUpdate?>.Publisher { $cardCountUpdate }
 
     init() {
 
@@ -88,10 +84,10 @@ class DetailViewModel: DetailViewModelProtocol {
         return DetailCellViewModel(category: category)
     }
 
-    func changeCartCount(index: Int, count: Int, reload: Bool) {
+    func changeCartCount(cardCountUpdate: CardCountUpdate) {
         // Обновляем значение
-        output.product?.selectedAmount = count
-        cardCountUpdate = CardCountUpdate(index: index, value: count, reload: reload)
+        output.product?.selectedAmount = cardCountUpdate.value
+        output.cardCountUpdate = CardCountUpdate(index: cardCountUpdate.index, value: cardCountUpdate.value, reload: cardCountUpdate.reload)
     }
 }
 
@@ -104,4 +100,7 @@ class OutputDetailView {
     @Published var product: Product?
     var image: UIImage?
     @Published var loaded: Bool = false
+    
+    @Published var cardCountUpdate: CardCountUpdate?
+    var cardCountUpdatePublisher: Published<CardCountUpdate?>.Publisher { $cardCountUpdate }
 }
